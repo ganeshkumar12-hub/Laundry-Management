@@ -1,4 +1,4 @@
-# BubbleFlow Laundry Manager 🌊
+# BubbleFlow Laundry Managerment 🌊
 
 A modern, AI-enhanced laundry order management system built for performance, transparency, and ease of use.
 
