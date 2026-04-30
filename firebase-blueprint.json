@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Laundry Order",
+      "description": "Represents a laundry order placed by a customer.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "description": "Customer full name" },
+        "customerPhone": { "type": "string", "description": "Customer phone number" },
+        "garments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "quantity": { "type": "number" },
+              "pricePerItem": { "type": "number" }
+            }
+          }
+        },
+        "totalAmount": { "type": "number", "description": "Total bill amount" },
+        "status": {
+          "type": "string",
+          "enum": ["RECEIVED", "PROCESSING", "READY", "DELIVERED"]
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "estimatedDeliveryDate": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string", "description": "UID of the user who created the order" }
+      },
+      "required": ["customerName", "customerPhone", "garments", "totalAmount", "status", "createdAt", "updatedAt", "createdBy"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of laundry orders"
+    }
+  }
+}

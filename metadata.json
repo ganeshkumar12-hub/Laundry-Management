@@ -1,0 +1,6 @@
+{
+  "name": "BubbleFlow Laundry Manager",
+  "description": "A lightweight laundry order management system with a real-time dashboard, order tracking, and billing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && data.createdBy == request.auth.uid;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidOrder(data) {
+      return data.keys().hasAll(['customerName', 'customerPhone', 'garments', 'totalAmount', 'status', 'createdAt', 'updatedAt', 'createdBy'])
+        && data.keys().size() == 8
+        && data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 100
+        && data.customerPhone is string && data.customerPhone.size() >= 7 && data.customerPhone.size() <= 20
+        && data.garments is list && data.garments.size() >= 1 && data.garments.size() <= 50
+        // Basic check for first garment type (syntax restraint: no all/map)
+        && data.garments[0].type is string && data.garments[0].quantity is number
+        && data.totalAmount is number && data.totalAmount >= 0
+        && data.status in ['RECEIVED', 'PROCESSING', 'READY', 'DELIVERED']
+        && data.createdBy == request.auth.uid;
+    }
+
+    // --- Collections ---
+    match /orders/{orderId} {
+      allow get: if isOwner(existing());
+      allow list: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      
+      allow update: if isOwner(existing())
+        && isValidOrder(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().createdAt == existing().createdAt
+        && (
+          // Action: Status Update
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+          // Action: Full Edit (if allowed)
+          (incoming().diff(existing()).affectedKeys().hasAny(['customerName', 'customerPhone', 'garments', 'totalAmount', 'status', 'updatedAt']))
+        );
+      
+      allow delete: if false; // Orders should generally not be deleted for audit
+    }
+  }
+}
